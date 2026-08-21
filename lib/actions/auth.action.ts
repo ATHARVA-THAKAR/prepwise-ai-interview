@@ -28,6 +28,13 @@ export async function setSessionCookie(idToken: string) {
 export async function signUp(params: SignUpParams) {
   const { uid, name, email } = params;
 
+  if (!db) {
+    return {
+      success: false,
+      message: "Firebase is not configured. Please set up .env.local",
+    };
+  }
+
   try {
     // check if user exists in db
     const userRecord = await db.collection("users").doc(uid).get();
@@ -70,6 +77,13 @@ export async function signUp(params: SignUpParams) {
 export async function signIn(params: SignInParams) {
   const { email, idToken } = params;
 
+  if (!auth) {
+    return {
+      success: false,
+      message: "Firebase is not configured. Please set up .env.local",
+    };
+  }
+
   try {
     const userRecord = await auth.getUserByEmail(email);
     if (!userRecord)
@@ -98,6 +112,8 @@ export async function signOut() {
 
 // Get current user from session cookie
 export async function getCurrentUser(): Promise<User | null> {
+  if (!auth || !db) return null;
+
   const cookieStore = await cookies();
 
   const sessionCookie = cookieStore.get("session")?.value;

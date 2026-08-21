@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { vapi } from "@/lib/vapi.sdk";
 import { interviewer } from "@/constants";
@@ -117,26 +118,49 @@ const Agent = ({
   const handleCall = async () => {
     setCallStatus(CallStatus.CONNECTING);
 
-    if (type === "generate") {
-      await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
-        variableValues: {
-          username: userName,
-          userid: userId,
-        },
-      });
-    } else {
-      let formattedQuestions = "";
-      if (questions) {
-        formattedQuestions = questions
-          .map((question) => `- ${question}`)
-          .join("\n");
-      }
+    try {
+      if (type === "generate") {
+        const workflowId = process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID;
+        if (!workflowId) {
+          toast.error(
+            "Vapi Workflow ID is missing. Please set NEXT_PUBLIC_VAPI_WORKFLOW_ID in .env.local"
+          );
+          setCallStatus(CallStatus.INACTIVE);
+          return;
+        }
 
-      await vapi.start(interviewer, {
-        variableValues: {
-          questions: formattedQuestions,
-        },
-      });
+        await vapi.start(workflowId, {
+          variableValues: {
+            username: userName,
+            userid: userId,
+          },
+        });
+      } else {
+        if (!process.env.NEXT_PUBLIC_VAPI_WEB_TOKEN) {
+          toast.error(
+            "Vapi Web Token is missing. Please set NEXT_PUBLIC_VAPI_WEB_TOKEN in .env.local"
+          );
+          setCallStatus(CallStatus.INACTIVE);
+          return;
+        }
+
+        let formattedQuestions = "";
+        if (questions) {
+          formattedQuestions = questions
+            .map((question) => `- ${question}`)
+            .join("\n");
+        }
+
+        await vapi.start(interviewer, {
+          variableValues: {
+            questions: formattedQuestions,
+          },
+        });
+      }
+    } catch (error: any) {
+      console.error("Vapi call error:", error);
+      toast.error(`Vapi Call Error: ${error?.message || error}`);
+      setCallStatus(CallStatus.INACTIVE);
     }
   };
 

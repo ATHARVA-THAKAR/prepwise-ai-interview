@@ -42,6 +42,11 @@ const AuthForm = ({ type }: { type: FormType }) => {
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    if (!auth) {
+      toast.error("Firebase is not configured. Please set NEXT_PUBLIC_FIREBASE_API_KEY in .env.local");
+      return;
+    }
+
     try {
       if (type === "sign-up") {
         const { name, email, password } = data;
@@ -81,17 +86,22 @@ const AuthForm = ({ type }: { type: FormType }) => {
           return;
         }
 
-        await signIn({
+        const result = await signIn({
           email,
           idToken,
         });
 
+        if (result && !result.success) {
+          toast.error(result.message || "Sign in failed. Please try again.");
+          return;
+        }
+
         toast.success("Signed in successfully.");
         router.push("/");
       }
-    } catch (error) {
-      console.log(error);
-      toast.error(`There was an error: ${error}`);
+    } catch (error: any) {
+      console.error("Auth error:", error);
+      toast.error(`Auth Error: ${error.message || error}`);
     }
   };
 

@@ -6,7 +6,7 @@ import { getFirestore } from "firebase-admin/firestore";
 function initFirebaseAdmin() {
   const apps = getApps();
 
-  if (!apps.length) {
+  if (!apps.length && process.env.FIREBASE_PROJECT_ID) {
     initializeApp({
       credential: cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
@@ -18,8 +18,8 @@ function initFirebaseAdmin() {
   }
 
   return {
-    auth: getAuth(),
-    db: getFirestore(),
+    auth: getApps().length ? getAuth() : (null as unknown as ReturnType<typeof getAuth>),
+    db: getApps().length ? getFirestore() : (null as unknown as ReturnType<typeof getFirestore>),
   };
 }
 
