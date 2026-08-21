@@ -107,15 +107,18 @@ export async function getLatestInterviews(
   if (!db) return [];
 
   try {
-    const interviews = await db
+    let query: any = db
       .collection("interviews")
       .orderBy("createdAt", "desc")
-      .where("finalized", "==", true)
-      .where("userId", "!=", userId)
-      .limit(limit)
-      .get();
+      .where("finalized", "==", true);
 
-    return interviews.docs.map((doc) => ({
+    if (userId) {
+      query = query.where("userId", "!=", userId);
+    }
+
+    const interviews = await query.limit(limit).get();
+
+    return interviews.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
     })) as Interview[];
@@ -133,7 +136,7 @@ export async function getLatestInterviews(
       })) as Interview[];
 
     return data
-      .filter((i) => i.userId !== userId)
+      .filter((i) => (userId ? i.userId !== userId : true))
       .sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -145,7 +148,7 @@ export async function getLatestInterviews(
 export async function getInterviewsByUserId(
   userId: string
 ): Promise<Interview[] | null> {
-  if (!db) return [];
+  if (!db || !userId) return [];
 
   try {
     const interviews = await db
