@@ -119,7 +119,10 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(onSubmit)}
+            onSubmit={(e) => {
+              e.preventDefault();
+              form.handleSubmit(onSubmit)(e);
+            }}
             className="w-full space-y-6 mt-4 form"
           >
             {!isSignIn && (
